@@ -3,49 +3,40 @@ class Vue {
     constructor(options){
         this.$data = options.data || {}
         this.$computed = options.computed || {}
-        this.$watch = options.watch || {}
         this.$el = typeof options.el === 'string' ? document.querySelector(el) : options.el || document.body
-        this.$options = Object.assign({},{computed:{},methods:{},watch:{}},options)
+        this.$options = Object.assign({},{methods:{},computed:{}},options)
         this.window = window
 
+        this._proxyData(options)
 
-        this.definePropertyToVm(this.$options.data)
-        this.definePropertyToVm(this.$options.computed)
-        this.defineMethodsToVm(this.$options)
     }
 
-    observe(data){
-        if (!data || typeof data !== 'object') {
-            return
-        }
 
-        Object.keys(data).forEach(v=>{
-            this.definePropertyToVm(data,v,data[v])
+    _proxyData(options){
+
+        const props = ['data','methods']
+        props.forEach(prop =>{
+            Object.keys(options[prop]).forEach(v=> {
+                Object.defineProperty(this,v,{
+                    enumerable: false,
+                    configurable: true,
+                    get(){
+                        if (this.$data.hasOwnProperty(v) && typeof this.$data[v] !== 'undefined') {
+                            return this.$data[v]
+                        } else if (this.$computed.hasOwnProperty(v) && typeof this.$computed[v] !== 'undefined' && typeof this.$computed[v] === 'function'){
+                            return this.$computed[v].call(this)
+                        } else {
+                            return undefined
+                        }
+                    },
+                    set(val){
+                        if (this.$data.hasOwnProperty(v)) {
+                            this.$data[v] = val
+                        }
+                    }
+                })
+            })
         })
     }
-
-    definePropertyToVm(data,key,value){
-        this.observe(data)
-        Object.defineProperty(data,key,{
-            enumerable: false,
-            configurable: true,
-            get(){
-                return value
-            },
-            set(newVal){
-                value = newVal
-            }
-        })
-    }
-
-
-    defineMethodsToVm(options){
-
-        let methods = options.methods
-        Object.keys(methods).forEach(m =>{
-            this[m] = this.$options.methods[m]
-        })
-    }
-
 
 }
