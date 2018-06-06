@@ -2,6 +2,7 @@ export class Observer {
 
     constructor (data){
         this.data = data
+        this.observer(data)
     }
 
 
@@ -36,5 +37,10 @@ export class Observer {
                 }
             })
         })
+    }
+
+
+    observeArray(){
+
     }
 }
