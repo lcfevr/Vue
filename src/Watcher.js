@@ -10,7 +10,7 @@ export class Watcher {
         this.callback = callback
         this.value = null
         this.uid = $uid++
-
+        this.update()
     }
 
 

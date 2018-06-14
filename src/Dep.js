@@ -9,9 +9,9 @@ export class Dep {
     }
 
 
-    notify(){
+    notify(options){
         this.subs.forEach(v =>{
-            v.update()
+            v.update(options)
         })
     }
 }

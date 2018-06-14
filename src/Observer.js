@@ -1,7 +1,9 @@
+import Dep from './Dep.js'
 export class Observer {
 
     constructor (data){
         this.data = data
+
         this.observer(data)
     }
 
@@ -13,12 +15,19 @@ export class Observer {
         }
 
 
+        this.defineReactiveObject(data)
+    }
+
+
+    defineReactiveObject(data){
+
         Object.keys(data).forEach(k =>{
+            let dep = new Dep()
             Object.defineProperty(data,k,{
                 enumerable:true,
                 configurable:false,
                 get(){
-                    //TODO add depend
+                    Dep.target && dep.addSub(Dep.target)
                     return val
                 },
                 set(newVal){
@@ -28,19 +37,47 @@ export class Observer {
                     val = newVal
 
                     if (Array.isArray(newVal)) {
-                        //TODO watch Array
+                        this.observeArray(newVal,dep)
                     } else {
                         this.observer(newVal)
                     }
 
-                    //TODO notify
+                    dep.notify()
                 }
             })
+        })
+
+    }
+
+    observeArray(array,dep){
+        array.__proto__ = this.defineReactiveArray(dep)
+        array.forEach((arr) =>{
+            this.observer(arr)
         })
     }
 
 
-    observeArray(){
+    defineReactiveArray(dep){
+        const methods = ['push','splice','shift','pop','sort','unshift','reverse']
+        let arrProperty = Array.prototype
+        let arrMethods = Object.create(arrProperty)
 
+
+        Object.keys(methods).forEach(method =>{
+            let original = arrProperty[method]
+            Object.defineProperty(arrMethods,method,{
+                value:()=>{
+
+                    let args = Array.from(arguments)
+                    let result = original.apply(this,args)
+                    dep.notify({methods,args})
+
+                    return result
+                }
+            })
+        })
+
+
+        return arrMethods
     }
 }
